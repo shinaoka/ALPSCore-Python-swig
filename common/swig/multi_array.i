@@ -304,7 +304,12 @@
       pydims.ptr = &dims_tmp[0];
 
       int refcheck = 0;//correct?
-      PyArray_Resize(temp, &pydims, refcheck, NPY_CORDER);
+      PyObject* ret = PyArray_Resize(temp, &pydims, refcheck, NPY_CORDER);
+      if (ret == NULL) {
+        PyErr_SetString(PyExc_ValueError, "CopyFromCXXToNumPyArray: Resize of numpy array failed.");
+        return false;
+      }
+      Py_DECREF(ret);
     }
     if (temp == NULL || isNewObject != 0) {
       PyErr_SetString(PyExc_ValueError, "CopyFromCXXToNumPyArray: Impossible to convert the input into a Python array object.");
