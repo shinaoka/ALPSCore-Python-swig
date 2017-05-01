@@ -11,4 +11,4 @@ Tnl = np.zeros((4,4), dtype=complex)
 a.compute_Tnl(0, 10, Tnl)
 
 print Tnl.shape
-print Tnl
+print Tnl[:5,:5]

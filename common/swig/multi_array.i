@@ -128,6 +128,8 @@
       return true;
     }
     static void set_zero(obj_type& obj) {
+      //std::cout << "Called set zero " << obj.dimension(0) << std::endl;
+      //std::cout << "Called set zero " << obj.dimension(1) << std::endl;
       obj.setZero();
     } 
     static scalar& element_at(obj_type& obj, const std::vector<int>& indices) {
@@ -284,30 +286,24 @@
     std::vector<long> data_size_cxx(dim);
     bool size_mismatch = false;
     for (int i=0; i<dim; ++i) {
-      //data_size[i] = array_size(out,i);
       data_size_cxx[i] = data_size[i] = traits::size(*in,i);
       size_mismatch = size_mismatch || (traits::size(*in,i) != array_size(out,i));
     }
-    /*
-    if (size_mismatch) {
-      //memory leak? Count of old array object?
-      out = PyArray_SimpleNew(dim, &data_size_cxx[0], num_py_type<scalar>());
-      if (!out) {
-        return false;
-      }
-    }
-    */
 
     // Extract data
     int isNewObject = 0;
     PyArrayObject* temp = obj_to_array_contiguous_allow_conversion(out, array_type(out), &isNewObject);
     if (size_mismatch) {
       PyArray_Dims pydims;
-      pydims.len = dim;
+
+      std::vector<npy_intp> dims_tmp(dim);
       for (int i=0; i<dim; ++i) {
-        pydims.ptr[0] = static_cast<npy_intp>(data_size[i]);
+        dims_tmp[i] = static_cast<npy_intp>(data_size[i]);
       }
-      int refcheck = 1;//correct?
+      pydims.len = dim;
+      pydims.ptr = &dims_tmp[0];
+
+      int refcheck = 0;//correct?
       PyArray_Resize(temp, &pydims, refcheck, NPY_CORDER);
     }
     if (temp == NULL || isNewObject != 0) {
@@ -381,7 +377,7 @@
         indices[0] = i0;
         for (int i1= 0; i1< data_size[1]; ++i1) { 
           indices[1] = i1;
-          std::cout << "coppying " << out[lin_idx] << " " <<  traits::element_at(*in, indices) << std::endl;
+          std::cout << "coppying " << out[lin_idx] << " from " <<  traits::element_at(*in, indices) << std::endl;
           out[lin_idx] = traits::element_at(*in, indices);
           ++lin_idx;
         }
