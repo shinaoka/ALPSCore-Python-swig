@@ -51,11 +51,14 @@
     }
   };
 
+#ifdef EIGEN_WORLD_VERSION
   /** Support for Eigen::Matrix */
+  /*
   namespace Eigen {
     template<typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols> class Matrix;
-    int Dynamic;
+    const int Dynamic;
   }
+  */
   template <typename S, int RowsAtCompileTime, int ColsAtCompileTime, int Options, int MaxRows, int MaxCols>
   struct CXXTypeTraits<Eigen::Matrix<S,RowsAtCompileTime,ColsAtCompileTime,Options,MaxRows,MaxCols> > {
     typedef S scalar;
@@ -96,11 +99,14 @@
     }
   };
 
+#ifdef EIGEN_CXX11_TENSOR_TENSOR_H
   /** Support for Eigen::Tensor */
+  /*
   namespace Eigen {
     template<typename Scalar_, int NumIndices_, int Options_, typename IndexType_> class Tensor;
     template<class T, std::size_t N> class array;
   }
+  */
   template<typename Scalar_, int NumIndices_, int Options_, typename IndexType_> 
   struct CXXTypeTraits<Eigen::Tensor<Scalar_,NumIndices_,Options_,IndexType_> > {
     typedef Scalar_ scalar;
@@ -132,6 +138,8 @@
       return obj(indices_tmp);
     }
   };
+#endif /* EIGEN_CXX11_TENSOR_TENSOR_H */
+#endif /* EIGEN_WORLD_VERSION */
 
   /** Support for boost::multi_array */
   namespace boost {

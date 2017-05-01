@@ -6,11 +6,16 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/common/cmake)
 #If this does not find the correct one, please use invoke cmake with -DPYTHON_EXECUTABLE=/path/to/your/python/executable.
 find_package(PythonInterp REQUIRED)
 message("Found Python executable: " ${PYTHON_EXECUTABLE})
+message("Python version: " ${PYTHON_VERSION_STRING})
 
 #execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig;print sysconfig.get_config_var(\"LIBDIR\")" OUTPUT_VARIABLE PYTHON_LIBDIR OUTPUT_STRIP_TRA ILING_WHITESPACE)
 
-find_package(PythonLibs EXACT ${PYTHON_VERSION_STRING} REQUIRED)
+#find_package(PythonLibs EXACT ${PYTHON_VERSION_STRING} REQUIRED)
+find_package(PythonLibs REQUIRED)
 message("Found Python libs: " ${PYTHON_LIBRARIES})
+message("Python libs version: " ${PYTHONLIBS_VERSION_STRING})
+message("Python libraries: " ${PYTHON_LIBRARIES})
+message("Python include dirs: " ${PYTHON_INCLUDE_DIRS})
 
 find_package(NumPy REQUIRED)
 message("Found NumPy: " ${NUMPY_INCLUDE_DIR})
