@@ -56,6 +56,7 @@
 %ignore alps::gf::five_index_gf::load;
 
 %ignore alps::gf::three_index_gf::data;
+%ignore alps::gf::seven_index_gf::data;
 
 %pythoncode %{ 
 import alps.hdf5
@@ -68,21 +69,27 @@ def get_python_mesh_type(h5, path):
     if kind == 'MATSUBARA':
         positive_only = h5[path+'/positive_only']
         if positive_only == 0:
-            return 'MatsubaraPN'
+            str = 'MatsubaraPN'
         elif positive_only == 1:
-            return 'MatsubaraP'
+            str = 'MatsubaraP'
         else:
             raise RuntimeError("This mesh type is not supported by python wrapper: "+kind)
+        #str += "F" if h5[path+'/statistics'] == 1 else "B"
     elif kind == 'IMAGINARY_TIME':
-        return 'ImaginaryTime'
+        str = 'ImaginaryTime'
+        #str += "F" if h5[path+'/statistics'] == 1 else "B"
     elif kind == 'LEGENDRE':
-        return 'Legendre'
+        str = 'Legendre'
+        #str += "F" if h5[path+'/statistics'] == 1 else "B"
     elif kind == 'INDEX':
-        return 'Index'
-    elif kind == 'NUMERICAL':
-        return 'Numerical'
+        str = 'Index'
+    elif kind == 'NUMERICAL_MESH':
+        str = 'Numerical'
+        #str += "F" if h5[path+'/statistics'] == 1 else "B"
     else:
         raise RuntimeError("Unsupported mesh type in python wrapper: "+kind)
+
+    return str
 
 def get_python_gf_type(h5, path):
     N = h5[path+'/mesh/N']
@@ -120,6 +127,23 @@ def save_gf(gf, file_name, path):
 namespace alps {
 namespace gf {
 %extend three_index_gf {
+    void _get_data_buffer(VTYPE ** ARGOUT_ARRAY3, int *DIM1, int *DIM2, int *DIM3) {
+        const VTYPE* origin = $self->data().origin();
+        int N = $self->data().num_elements();
+
+        //make a copy
+        VTYPE* p_copy_data = new VTYPE[N];
+        std::copy(origin, origin+N, p_copy_data);
+
+        *ARGOUT_ARRAY3 = p_copy_data;
+        *DIM1 = $self->data().shape()[0];
+        *DIM2 = $self->data().shape()[1];
+        *DIM3 = $self->data().shape()[2];
+    }
+}
+
+/*
+%extend seven_index_gf {
     void _get_data_buffer(VTYPE ** ARGOUT_CARRAY3, int *DIM1, int *DIM2, int *DIM3) {
         const VTYPE* origin = $self->data().origin();
         int N = $self->data().num_elements();
@@ -134,6 +158,7 @@ namespace gf {
         *DIM3 = $self->data().shape()[2];
     }
 }
+*/
 
 }
 }
@@ -143,7 +168,7 @@ namespace gf {
 
 %extend three_index_gf {
     %pythoncode %{ 
-        def data():
+        def data(self):
             return self._get_data_buffer()
     %}
 }
@@ -156,9 +181,13 @@ namespace gf {
 %template(omega_gf) alps::gf::one_index_gf<std::complex<double>, alps::gf::matsubara_mesh<alps::gf::mesh::POSITIVE_ONLY> >;
 */
 
-%template(ALPSComplexGF3MatsubaraPIndexIndex) alps::gf::three_index_gf<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh>;
-%template(load_ALPSComplexGF3MatsubaraPIndexIndex) load_gf_cxx<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh>;
-%template(save_ALPSComplexGF3MatsubaraPIndexIndex) save_gf_cxx<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh>;
+%template(ALPSGF3ComplexMatsubaraPIndexIndex) alps::gf::three_index_gf<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh>;
+%template(load_ALPSGF3ComplexMatsubaraPIndexIndex) load_gf_cxx<alps::gf::three_index_gf<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh> >;
+%template(save_ALPSGF3ComplexMatsubaraPIndexIndex) save_gf_cxx<alps::gf::three_index_gf<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh> >;
+
+%template(ALPSGF7ComplexNumericalNumericalNumericalIndexIndexIndexIndex) alps::gf::seven_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh>;
+%template(load_ALPSGF7ComplexNumericalNumericalNumericalIndexIndexIndexIndex) load_gf_cxx<alps::gf::seven_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh> >;
+%template(save_ALPSGF7ComplexNumericalNumericalNumericalIndexIndexIndexIndex) save_gf_cxx<alps::gf::seven_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh> >;
 
 %template(real_numerical_mesh) alps::gf::numerical_mesh<double>;
 %template(real_piecewise_polynomial) alps::gf::piecewise_polynomial<double>;

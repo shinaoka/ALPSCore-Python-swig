@@ -2101,6 +2101,24 @@
   $result = SWIG_Python_AppendOutput($result,(PyObject*)array$argnum);
 }
 
+/* Typemap suite for (DATA_TYPE ARGOUT_ARRAY7[ANY][ANY][ANY][ANY][ANY][ANY][ANY])
+ */
+%typemap(in,numinputs=0,
+         fragment="NumPy_Backward_Compatibility,NumPy_Macros")
+  (DATA_TYPE ARGOUT_ARRAY7[ANY][ANY][ANY][ANY][ANY][ANY][ANY])
+  (PyObject* array = NULL)
+{
+  npy_intp dims[7] = { $1_dim0, $1_dim1, $1_dim2, $1_dim3, $1_dim4, $1_dim5, $1_dim6 };
+  array = PyArray_SimpleNew(7, dims, DATA_TYPECODE);
+  if (!array) SWIG_fail;
+  $1 = ($1_ltype) array_data(array);
+}
+%typemap(argout)
+  (DATA_TYPE ARGOUT_ARRAY5[ANY][ANY][ANY][ANY][ANY][ANY][ANY])
+{
+  $result = SWIG_Python_AppendOutput($result,(PyObject*)array$argnum);
+}
+
 /*****************************/
 /* Argoutview Array Typemaps */
 /*****************************/
