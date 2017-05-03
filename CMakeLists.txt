@@ -17,10 +17,15 @@ message("Python libs version: " ${PYTHONLIBS_VERSION_STRING})
 message("Python libraries: " ${PYTHON_LIBRARIES})
 message("Python include dirs: " ${PYTHON_INCLUDE_DIRS})
 
+if (NOT PYTHONLIBS_VERSION_STRING STREQUAL PYTHON_VERSION_STRING)
+    message(FATAL_ERROR "Version mismatch between Python interpreter and libs")
+endif()
+
 find_package(NumPy REQUIRED)
 message("Found NumPy: " ${NUMPY_INCLUDE_DIR})
+message("NumPy include dirs: " ${PYTHON_NUMPY_INCLUDE_DIR})
 
-find_package(SWIG REQUIRED)
+find_package(SWIG REQUIRED 3.0)
 include(${SWIG_USE_FILE})
 include(GenerateExportHeader)
 

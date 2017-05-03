@@ -7,9 +7,6 @@
 %}
 
 %include "std_string.i"
-/*
-%include "../common/swig/numpy.i"
-*/
 %include "../common/swig/multi_array.i"
 
 %multi_array_typemaps(std::vector<double>);
@@ -127,7 +124,7 @@ def save_gf(gf, file_name, path):
 namespace alps {
 namespace gf {
 %extend three_index_gf {
-    void _get_data_buffer(VTYPE ** ARGOUT_ARRAY3, int *DIM1, int *DIM2, int *DIM3) {
+    void _get_copy_buffer(VTYPE ** ARGOUTVIEWM_ARRAY3, int *DIM1, int *DIM2, int *DIM3) {
         const VTYPE* origin = $self->data().origin();
         int N = $self->data().num_elements();
 
@@ -135,30 +132,12 @@ namespace gf {
         VTYPE* p_copy_data = new VTYPE[N];
         std::copy(origin, origin+N, p_copy_data);
 
-        *ARGOUT_ARRAY3 = p_copy_data;
+        *ARGOUTVIEWM_ARRAY3 = p_copy_data;
         *DIM1 = $self->data().shape()[0];
         *DIM2 = $self->data().shape()[1];
         *DIM3 = $self->data().shape()[2];
     }
 }
-
-/*
-%extend seven_index_gf {
-    void _get_data_buffer(VTYPE ** ARGOUT_CARRAY3, int *DIM1, int *DIM2, int *DIM3) {
-        const VTYPE* origin = $self->data().origin();
-        int N = $self->data().num_elements();
-
-        //make a copy
-        VTYPE* p_copy_data = new VTYPE[N];
-        std::copy(origin, origin+N, p_copy_data);
-
-        *ARGOUT_CARRAY3 = p_copy_data;
-        *DIM1 = $self->data().shape()[0];
-        *DIM2 = $self->data().shape()[1];
-        *DIM3 = $self->data().shape()[2];
-    }
-}
-*/
 
 }
 }
@@ -168,18 +147,13 @@ namespace gf {
 
 %extend three_index_gf {
     %pythoncode %{ 
-        def data(self):
-            return self._get_data_buffer()
+        def to_array(self):
+            return self._get_copy_buffer()
     %}
 }
 
 }
 }
-
-/*
-%template(legendre_gf) alps::gf::one_index_gf< std::complex<double>, alps::gf::legendre_mesh >;
-%template(omega_gf) alps::gf::one_index_gf<std::complex<double>, alps::gf::matsubara_mesh<alps::gf::mesh::POSITIVE_ONLY> >;
-*/
 
 %template(ALPSGF3ComplexMatsubaraPIndexIndex) alps::gf::three_index_gf<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh>;
 %template(load_ALPSGF3ComplexMatsubaraPIndexIndex) load_gf_cxx<alps::gf::three_index_gf<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh> >;
