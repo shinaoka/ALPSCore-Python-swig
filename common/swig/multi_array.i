@@ -1,5 +1,4 @@
 %{
-#define SWIG_FILE_WITH_INIT
 #include <vector>
 %}
 
@@ -7,9 +6,11 @@
 %include "numpy.i"
 %include "std_vector.i"
 
+/*
 %init %{
   import_array();
 %}
+*/
 
 %fragment("Array_Fragments", "header", fragment="NumPy_Fragments")
 %{

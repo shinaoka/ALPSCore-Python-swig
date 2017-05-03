@@ -7,8 +7,14 @@
 %}
 
 %include "std_string.i"
-%include "../common/swig/multi_array.i"
+%include "../common/swig/numpy.i"
 
+%init %{
+   import_array();
+%}
+
+/*
+%include "../common/swig/multi_array.i"
 %multi_array_typemaps(std::vector<double>);
 %multi_array_typemaps(std::vector<std::complex<double> >); 
 
@@ -42,18 +48,23 @@
 %multi_array_typemaps(Eigen::Tensor<std::complex<double>,5>);
 %multi_array_typemaps(Eigen::Tensor<std::complex<double>,6>);
 %multi_array_typemaps(Eigen::Tensor<std::complex<double>,7>);
+*/
 
 
-/* This ignore directive must come before including header files */
+/* These ignore directives must come before including header files */
 %ignore alps::gf::operator<<;
+
 %ignore alps::gf::one_index_gf::load;
 %ignore alps::gf::two_index_gf::load;
 %ignore alps::gf::three_index_gf::load;
 %ignore alps::gf::four_index_gf::load;
 %ignore alps::gf::five_index_gf::load;
+%ignore alps::gf::seven_index_gf::load;
 
 %ignore alps::gf::three_index_gf::data;
 %ignore alps::gf::seven_index_gf::data;
+
+%ignore alps::gf::three_index_gf::operator();
 
 %pythoncode %{ 
 import alps.hdf5
@@ -137,6 +148,10 @@ namespace gf {
         *DIM2 = $self->data().shape()[1];
         *DIM3 = $self->data().shape()[2];
     }
+
+    VTYPE _get_value(int i1, int i2, int i3) {
+        return $self->operator()(MESH1::index_type(i1), MESH2::index_type(i2), MESH3::index_type(i3));
+    }
 }
 
 }
@@ -149,6 +164,9 @@ namespace gf {
     %pythoncode %{ 
         def to_array(self):
             return self._get_copy_buffer()
+
+        def __call__(self, i1, i2, i3):
+            return self._get_value(i1, i2, i3)
     %}
 }
 

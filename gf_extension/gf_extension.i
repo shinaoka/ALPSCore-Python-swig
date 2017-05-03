@@ -8,6 +8,10 @@
 %include "std_string.i"
 %include "../common/swig/multi_array.i"
 
+%init %{
+   import_array();
+%}
+
 %multi_array_typemaps(std::vector<double>);
 %multi_array_typemaps(std::vector<std::complex<double> >); 
 
