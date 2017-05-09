@@ -173,9 +173,21 @@ namespace gf {
 }
 }
 
+/*
+%typemap(in) alps::gf::numerical_mesh<double>::index_type
+{
+  $1 = alps::gf::numerical_mesh<double>::index_type(static_cast<int>(PyInt_AsLong($input)));
+}
+*/
+
+
 %template(ALPSGF3ComplexMatsubaraPIndexIndex) alps::gf::three_index_gf<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh>;
 %template(load_ALPSGF3ComplexMatsubaraPIndexIndex) load_gf_cxx<alps::gf::three_index_gf<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh> >;
 %template(save_ALPSGF3ComplexMatsubaraPIndexIndex) save_gf_cxx<alps::gf::three_index_gf<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh> >;
+
+%template(ALPSGF3ComplexNumericalIndexIndex) alps::gf::three_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh>;
+%template(load_ALPSGF3ComplexNumericalIndexIndex) load_gf_cxx<alps::gf::three_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh> >;
+%template(save_ALPSGF3ComplexNumericalIndexIndex) save_gf_cxx<alps::gf::three_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh> >;
 
 %template(ALPSGF7ComplexNumericalNumericalNumericalIndexIndexIndexIndex) alps::gf::seven_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh>;
 %template(load_ALPSGF7ComplexNumericalNumericalNumericalIndexIndexIndexIndex) load_gf_cxx<alps::gf::seven_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh> >;
