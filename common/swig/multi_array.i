@@ -18,6 +18,7 @@
   template<> int num_py_type<double>() {return NPY_DOUBLE;};
   template<> int num_py_type<std::complex<double> >() {return NPY_CDOUBLE;};
   template<> int num_py_type<int>() {return NPY_INT;};
+  template<> int num_py_type<long>() {return NPY_LONG;};
 
   template <typename OBJ>
   struct CXXTypeTraits {

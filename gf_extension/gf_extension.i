@@ -6,12 +6,15 @@
 %}
 
 %include "std_string.i"
+%include "std_vector.i"
 %include "../common/swig/multi_array.i"
 
 %init %{
    import_array();
 %}
 
+%multi_array_typemaps(std::vector<int>);
+%multi_array_typemaps(std::vector<long>);
 %multi_array_typemaps(std::vector<double>);
 %multi_array_typemaps(std::vector<std::complex<double> >); 
 
@@ -54,24 +57,18 @@
 %include <alps/gf_extension/ir_basis.hpp>
 %include <alps/gf_extension/detail/ir_basis.ipp>
 
-/*
-namespace alps {
-namespace gf_extension {
-%extend {
-  template<class T>
-  void compute_Tnl(const alps::gf::numerical_mesh<T>& mesh, const std::vector<long>& n) {
-    Eigen::Tensor<std::complex<double>,2> &Tnl;
-    std::vector<piecewise_polynomial<T> > bf;
+%inline %{
+  template<typename T>
+  Eigen::Tensor<std::complex<double>,2>
+  compute_Tnl(const alps::gf::numerical_mesh<double>& mesh, const std::vector<long>& n) {
+    Eigen::Tensor<std::complex<double>,2> Tnl;
+    std::vector<alps::gf::piecewise_polynomial<T> > bf;
     for (int i=0; i < mesh.extent(); ++i) {
       bf.push_back(mesh.basis_function(i));
     }
-    compute_transformation_matrix_to_matsubara(n, mesh.statistics(), bf, Tnl);
+    alps::gf_extension::compute_transformation_matrix_to_matsubara(n, mesh.statistics(), bf, Tnl);
     return Tnl;
-  };
-}
-}
-}
+  }
+%}
 
-%template(compute_Tnl) alps::gf_extension::compute_Tnl<double>;
-%template(compute_Tnl) alps::gf_extension::compute_transformation_matrix_to_matsubara<double>;
-*/
+%template(compute_Tnl) compute_Tnl<double>;

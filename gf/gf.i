@@ -149,6 +149,18 @@ namespace gf {
         *DIM3 = $self->data().shape()[2];
     }
 
+    /*
+    Eigen::Tensor<VTYPE,3,Eigen::RowMajor> to_array() {
+        const VTYPE* origin = $self->data().origin();
+        int N = $self->data().num_elements();
+        int* shape = $self->data().shape();
+
+        Eigen::Tensor<VTYPE,3,Eigen::RowMajor> v(shape[0], shape[1], shape[2]);
+        std::copy(origin, origin+N, v.begin());
+        return v;
+    }
+    */
+
     VTYPE _get_value(int i1, int i2, int i3) {
         return $self->operator()(MESH1::index_type(i1), MESH2::index_type(i2), MESH3::index_type(i3));
     }
@@ -167,6 +179,16 @@ namespace gf {
 
         def __call__(self, i1, i2, i3):
             return self._get_value(i1, i2, i3)
+    %}
+}
+
+%extend seven_index_gf {
+    %pythoncode %{ 
+        def to_array(self):
+            return self._get_copy_buffer()
+
+        def __call__(self, i1, i2, i3, i4, i5, i6, i7):
+            return self._get_value(i1, i2, i3, i4, i5, i6, i7)
     %}
 }
 
