@@ -134,6 +134,7 @@ def save_gf(gf, file_name, path):
 
 namespace alps {
 namespace gf {
+
 %extend three_index_gf {
     void _get_copy_buffer(VTYPE ** ARGOUTVIEWM_ARRAY3, int *DIM1, int *DIM2, int *DIM3) {
         const VTYPE* origin = $self->data().origin();
@@ -149,22 +150,37 @@ namespace gf {
         *DIM3 = $self->data().shape()[2];
     }
 
-    /*
-    Eigen::Tensor<VTYPE,3,Eigen::RowMajor> to_array() {
-        const VTYPE* origin = $self->data().origin();
-        int N = $self->data().num_elements();
-        int* shape = $self->data().shape();
-
-        Eigen::Tensor<VTYPE,3,Eigen::RowMajor> v(shape[0], shape[1], shape[2]);
-        std::copy(origin, origin+N, v.begin());
-        return v;
-    }
-    */
-
     VTYPE _get_value(int i1, int i2, int i3) {
         return $self->operator()(MESH1::index_type(i1), MESH2::index_type(i2), MESH3::index_type(i3));
     }
 }
+
+%extend seven_index_gf {
+    void _get_copy_buffer(VTYPE ** ARGOUTVIEWM_ARRAY1, int *DIM1) {
+        const VTYPE* origin = $self->data().origin();
+        int N = $self->data().num_elements();
+
+        //make a copy
+        VTYPE* p_copy_data = new VTYPE[N];
+        std::copy(origin, origin+N, p_copy_data);
+
+        *ARGOUTVIEWM_ARRAY1 = p_copy_data;
+        *DIM1 = N;
+    }
+
+    VTYPE _get_value(int i1, int i2, int i3, int i4, int i5, int i6, int i7) {
+        return $self->operator()(
+            MESH1::index_type(i1),
+            MESH2::index_type(i2),
+            MESH3::index_type(i3),
+            MESH4::index_type(i4),
+            MESH5::index_type(i5),
+            MESH6::index_type(i6),
+            MESH7::index_type(i7)
+        );
+    }
+}
+
 
 }
 }
@@ -185,7 +201,7 @@ namespace gf {
 %extend seven_index_gf {
     %pythoncode %{ 
         def to_array(self):
-            return self._get_copy_buffer()
+            return self._get_copy_buffer().reshape(self.mesh1().extent(), self.mesh2().extent(), self.mesh3().extent(), self.mesh4().extent(), self.mesh5().extent(), self.mesh6().extent(), self.mesh7().extent())
 
         def __call__(self, i1, i2, i3, i4, i5, i6, i7):
             return self._get_value(i1, i2, i3, i4, i5, i6, i7)
