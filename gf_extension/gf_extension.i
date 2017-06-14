@@ -56,19 +56,4 @@
 
 %include <alps/gf_extension/ir_basis.hpp>
 %include <alps/gf_extension/detail/ir_basis.ipp>
-
-%inline %{
-  template<typename T>
-  Eigen::Tensor<std::complex<double>,2>
-  compute_Tnl(const alps::gf::numerical_mesh<double>& mesh, const std::vector<long>& n) {
-    Eigen::Tensor<std::complex<double>,2> Tnl;
-    std::vector<alps::gf::piecewise_polynomial<T> > bf;
-    for (int i=0; i < mesh.extent(); ++i) {
-      bf.push_back(mesh.basis_function(i));
-    }
-    alps::gf_extension::compute_transformation_matrix_to_matsubara(n, mesh.statistics(), bf, Tnl);
-    return Tnl;
-  }
-%}
-
-%template(compute_Tnl) compute_Tnl<double>;
+%include <alps/gf_extension/transformer.hpp>

@@ -21,13 +21,22 @@ a = alps.gf_extension.fermionic_ir_basis(100.0, 10)
 print(a.dim())
 print(a(0).compute_value(0.1))
 
-Tnl = np.zeros((4,4), dtype=complex)
+#Tnl = np.zeros((4,4), dtype=complex)
 niw = 1000
-a.compute_Tnl(0, niw-1, Tnl)
+Tnl = a.compute_Tnl(np.arange(niw))
 
-print Tnl.shape
-print np.sum(np.abs(Tnl))
+#print np.sum(np.abs(Tnl))
 dim = a.dim()
 
-for i in xrange(niw):
-  print i, Tnl[i,0].real, Tnl[i,0].imag
+#print Tnl.shape
+#for i in xrange(niw):
+  #print i, Tnl[i,0].real, Tnl[i,0].imag
+
+Tbar_ol = alps.gf_extension.interpolate_Tbar_ol(a)
+
+log_points = np.linspace(0, np.log(1E+10), 1000)
+ovec = [int(np.exp(l)) for l in log_points]
+
+for o in ovec:
+  z = Tbar_ol(o, dim-1)
+  print o, z.real, z.imag
