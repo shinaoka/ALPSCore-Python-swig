@@ -114,7 +114,7 @@ def get_python_gf_type(h5, path):
 
 #Very ad hoc implementation
 def load_gf(file_name, path):
-    f = alps.hdf5.archive(file_name, 'r')
+    f = alps.hdf5.archive(file_name, "r")
     python_name = get_python_gf_type(f, path)
     gf = (globals()[python_name])()
     loader = globals()['load_'+python_name]
@@ -122,7 +122,7 @@ def load_gf(file_name, path):
     return gf
 
 def save_gf(gf, file_name, path):
-    f = alps.hdf5.archive(file_name, 'w')
+    f = alps.hdf5.archive(file_name, "w")
     saver = globals()['save_'+ gf.__class__.__name__]
     saver(gf, file_name, path)
 %}
