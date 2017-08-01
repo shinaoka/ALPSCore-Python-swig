@@ -17,8 +17,8 @@ print g1.to_array()
 alps.gf.save_gf(g1, 'tmp.h5', 'gf')
 
 #Contruct an IR basis and compute a transformation matrix to Matsubara freq.
-a = alps.gf_extension.fermionic_ir_basis(100.0, 10)
-print(a.dim())
+a = alps.gf_extension.fermionic_ir_basis(100.0, 40, 1e-10)
+print("dim ", a.dim())
 print(a(0).compute_value(0.1))
 
 #Tnl = np.zeros((4,4), dtype=complex)

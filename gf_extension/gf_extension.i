@@ -3,6 +3,7 @@
 %{
 #define SWIG_FILE_WITH_INIT
 #include <alps/gf_extension/ir_basis.hpp>
+#include "aux.hpp"
 %}
 
 %include "std_string.i"
@@ -51,9 +52,11 @@
 
 %ignore alps::gf_extension::fermionic_kernel::clone;
 %ignore alps::gf_extension::bosonic_kernel::clone;
+%ignore alps::gf_extension::compute_C_tensor;
 %ignore dgesvd_;
 %ignore dgesdd_;
 
 %include <alps/gf_extension/ir_basis.hpp>
 %include <alps/gf_extension/detail/ir_basis.ipp>
 %include <alps/gf_extension/transformer.hpp>
+%include "aux.hpp"
