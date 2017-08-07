@@ -1,6 +1,5 @@
 import numpy as np
 
-import alps.hdf5
 import alps.gf
 import alps.gf_extension
 

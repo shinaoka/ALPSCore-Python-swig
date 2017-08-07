@@ -13,44 +13,6 @@
    import_array();
 %}
 
-/*
-%include "../common/swig/multi_array.i"
-%multi_array_typemaps(std::vector<double>);
-%multi_array_typemaps(std::vector<std::complex<double> >); 
-
-%multi_array_typemaps(Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic>);
-%multi_array_typemaps(Eigen::Matrix<std::complex<double>,Eigen::Dynamic,Eigen::Dynamic>);
-
-%multi_array_typemaps(boost::multi_array<double,2>); 
-%multi_array_typemaps(boost::multi_array<double,3>); 
-%multi_array_typemaps(boost::multi_array<double,4>); 
-%multi_array_typemaps(boost::multi_array<double,5>); 
-%multi_array_typemaps(boost::multi_array<double,6>); 
-%multi_array_typemaps(boost::multi_array<double,7>); 
-
-%multi_array_typemaps(boost::multi_array<std::complex<double>,2>); 
-%multi_array_typemaps(boost::multi_array<std::complex<double>,3>); 
-%multi_array_typemaps(boost::multi_array<std::complex<double>,4>); 
-%multi_array_typemaps(boost::multi_array<std::complex<double>,5>); 
-%multi_array_typemaps(boost::multi_array<std::complex<double>,6>); 
-%multi_array_typemaps(boost::multi_array<std::complex<double>,7>); 
-
-%multi_array_typemaps(Eigen::Tensor<double,2>);
-%multi_array_typemaps(Eigen::Tensor<double,3>);
-%multi_array_typemaps(Eigen::Tensor<double,4>);
-%multi_array_typemaps(Eigen::Tensor<double,5>);
-%multi_array_typemaps(Eigen::Tensor<double,6>);
-%multi_array_typemaps(Eigen::Tensor<double,7>);
-
-%multi_array_typemaps(Eigen::Tensor<std::complex<double>,2>);
-%multi_array_typemaps(Eigen::Tensor<std::complex<double>,3>);
-%multi_array_typemaps(Eigen::Tensor<std::complex<double>,4>);
-%multi_array_typemaps(Eigen::Tensor<std::complex<double>,5>);
-%multi_array_typemaps(Eigen::Tensor<std::complex<double>,6>);
-%multi_array_typemaps(Eigen::Tensor<std::complex<double>,7>);
-*/
-
-
 /* These ignore directives must come before including header files */
 %ignore alps::gf::operator<<;
 
@@ -67,43 +29,39 @@
 %ignore alps::gf::three_index_gf::operator();
 
 %pythoncode %{ 
-import alps.hdf5
+import h5py
 
 mesh_types = []
 mesh_types.append(('alps::gf::legendre_mesh', 'LegendreMesh'))
 
 def get_python_mesh_type(h5, path):
-    kind = h5[path+'/kind']
+    kind = h5[path+'/kind'].value
     if kind == 'MATSUBARA':
-        positive_only = h5[path+'/positive_only']
+        positive_only = h5[path+'/positive_only'].value
         if positive_only == 0:
             str = 'MatsubaraPN'
         elif positive_only == 1:
             str = 'MatsubaraP'
         else:
             raise RuntimeError("This mesh type is not supported by python wrapper: "+kind)
-        #str += "F" if h5[path+'/statistics'] == 1 else "B"
     elif kind == 'IMAGINARY_TIME':
         str = 'ImaginaryTime'
-        #str += "F" if h5[path+'/statistics'] == 1 else "B"
     elif kind == 'LEGENDRE':
         str = 'Legendre'
-        #str += "F" if h5[path+'/statistics'] == 1 else "B"
     elif kind == 'INDEX':
         str = 'Index'
     elif kind == 'NUMERICAL_MESH':
         str = 'Numerical'
-        #str += "F" if h5[path+'/statistics'] == 1 else "B"
     else:
         raise RuntimeError("Unsupported mesh type in python wrapper: "+kind)
 
     return str
 
 def get_python_gf_type(h5, path):
-    N = h5[path+'/mesh/N']
+    N = h5[path+'/mesh/N'].value
 
     type_name = 'ALPSGF'+str(N)
-    if h5[path+'/data@__complex__']:
+    if '__complex__' in h5[path+'/data'].attrs and h5[path+'/data'].attrs['__complex__'] == 1:
         type_name += 'Complex'
     else:
         type_name += 'Real'
@@ -114,15 +72,14 @@ def get_python_gf_type(h5, path):
 
 #Very ad hoc implementation
 def load_gf(file_name, path):
-    f = alps.hdf5.archive(file_name, "r")
-    python_name = get_python_gf_type(f, path)
+    with h5py.File(file_name, "r") as f:
+        python_name = get_python_gf_type(f, path)
     gf = (globals()[python_name])()
     loader = globals()['load_'+python_name]
     loader(gf, file_name, path)
     return gf
 
 def save_gf(gf, file_name, path):
-    f = alps.hdf5.archive(file_name, "w")
     saver = globals()['save_'+ gf.__class__.__name__]
     saver(gf, file_name, path)
 %}
