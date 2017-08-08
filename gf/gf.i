@@ -2,7 +2,7 @@
 %module(package="alps") gf
 %{
 #define SWIG_FILE_WITH_INIT
-#include <alps/gf/gf.hpp>
+#include <alps/gf/mesh.hpp>
 #include "gf_aux.hpp"
 %}
 
@@ -16,178 +16,144 @@
 /* These ignore directives must come before including header files */
 %ignore alps::gf::operator<<;
 
-%ignore alps::gf::one_index_gf::load;
-%ignore alps::gf::two_index_gf::load;
-%ignore alps::gf::three_index_gf::load;
-%ignore alps::gf::four_index_gf::load;
-%ignore alps::gf::five_index_gf::load;
-%ignore alps::gf::seven_index_gf::load;
-
-%ignore alps::gf::three_index_gf::data;
-%ignore alps::gf::seven_index_gf::data;
-
-%ignore alps::gf::three_index_gf::operator();
-
 %pythoncode %{ 
 import h5py
+import numpy
 
-mesh_types = []
-mesh_types.append(('alps::gf::legendre_mesh', 'LegendreMesh'))
+def load_gf_data(f, path, dtype=float):
+    dtype = float
+    if '__complex__' in f[path].attrs and f[path].attrs['__complex__'] == 1:
+        dtype = complex
 
-def get_python_mesh_type(h5, path):
-    kind = h5[path+'/kind'].value
-    if kind == 'MATSUBARA':
-        positive_only = h5[path+'/positive_only'].value
-        if positive_only == 0:
-            str = 'MatsubaraPN'
-        elif positive_only == 1:
-            str = 'MatsubaraP'
+    if dtype==float:
+        return f[path].value
+    elif dtype==complex:
+        raw_data = f[path].value
+        s = raw_data.shape
+        array_2d = raw_data.reshape((int(raw_data.size/2), 2))
+        return (array_2d[:,0] + 1J*array_2d[:,1]).reshape(s[:-1])
+    else:
+        raise RuntimeError("Unknown type : "+dtype)
+
+def save_gf_data(f, path, data):
+    if data.dtype == float:
+        f[path] = data
+    elif data.dtype == complex:
+        s = data.shape
+        a = numpy.zeros((data.size, 2), dtype=float)
+        a[:,0] = data.flatten().real
+        a[:,1] = data.flatten().imag
+        f[path] = a.reshape(data.shape+(2,))
+        f[path].attrs['__complex__'] = 1
+    else:
+        raise RuntimeError("Unknown type : "+dtype)
+
+def load_mesh(file_name, path):
+    with h5py.File(file_name, 'r') as f:
+        kind = f[path+'/kind'].value
+        if kind == 'MATSUBARA':
+            positive_only = f[path+'/positive_only'].value
+            if positive_only == 0:
+                py_name = 'matsubara_positive_negative_mesh'
+            elif positive_only == 1:
+                py_name = 'matsubara_positive_mesh'
+            else:
+                raise RuntimeError("This mesh type is not supported by python wrapper: "+kind)
+        elif kind == 'IMAGINARY_TIME':
+            py_name = 'imaginary_time_mesh'
+        elif kind == 'LEGENDRE':
+            py_name = 'legendre_mesh'
+        elif kind == 'INDEX':
+            py_name = 'index_mesh'
+        elif kind == 'NUMERICAL_MESH':
+            py_name = 'numerical_mesh'
         else:
-            raise RuntimeError("This mesh type is not supported by python wrapper: "+kind)
-    elif kind == 'IMAGINARY_TIME':
-        str = 'ImaginaryTime'
-    elif kind == 'LEGENDRE':
-        str = 'Legendre'
-    elif kind == 'INDEX':
-        str = 'Index'
-    elif kind == 'NUMERICAL_MESH':
-        str = 'Numerical'
-    else:
-        raise RuntimeError("Unsupported mesh type in python wrapper: "+kind)
+            raise RuntimeError("Unsupported mesh type in python wrapper: "+kind)
 
-    return str
+    loader = globals()['load_'+py_name]
+    mesh_obj = (globals()[py_name])()
+    loader(mesh_obj, file_name, path)
+    return mesh_obj
 
-def get_python_gf_type(h5, path):
-    N = h5[path+'/mesh/N'].value
+def save_mesh(mesh, file_name, path):
+    saver = globals()['save_'+ mesh.__class__.__name__]
+    saver(mesh, file_name, path)
 
-    type_name = 'ALPSGF'+str(N)
-    if '__complex__' in h5[path+'/data'].attrs and h5[path+'/data'].attrs['__complex__'] == 1:
-        type_name += 'Complex'
-    else:
-        type_name += 'Real'
+class gf(object):
+    def __init__(self):
+        self._meshes = []
 
-    for im in range(N):
-        type_name += get_python_mesh_type(h5, path+'/mesh/'+str(im+1))
-    return type_name
+        # Data (numpy array)
+        self._data = None
 
-#Very ad hoc implementation
-def load_gf(file_name, path):
-    with h5py.File(file_name, "r") as f:
-        python_name = get_python_gf_type(f, path)
-    gf = (globals()[python_name])()
-    loader = globals()['load_'+python_name]
-    loader(gf, file_name, path)
-    return gf
+    def mesh(self, idx):
+        assert idx >= 0 and idx < len(self._meshes)
+        return self._meshes[idx]
 
-def save_gf(gf, file_name, path):
-    saver = globals()['save_'+ gf.__class__.__name__]
-    saver(gf, file_name, path)
+    def load(self, file_name, path):
+        with h5py.File(file_name, 'r') as f:
+            self._data = load_gf_data(f, path+'/data')
+            n_mesh = f[path+'/mesh/N'].value
+
+            self._version_major = f[path+'/version/major'].value
+            self._version_minor = f[path+'/version/minor'].value
+            self._version_originator = f[path+'/version/originator'].value
+            self._version_reference = f[path+'/version/reference'].value
+
+        self._meshes = []
+        for im in range(n_mesh):
+            self._meshes.append(load_mesh(file_name, path+'/mesh/'+str(im+1)))
+
+    def save(self, file_name, path):
+        with h5py.File(file_name, 'w') as f:
+            save_gf_data(f, path+'/data', self._data)
+            f[path+'/version/major'] = self._version_major
+            f[path+'/version/minor'] = self._version_minor
+            f[path+'/version/originator'] = self._version_originator
+            f[path+'/version/reference'] = self._version_reference
+            f[path+'/mesh/N'] = len(self._meshes)
+
+        # save meshes
+        im = 1
+        for mesh in self._meshes:
+            save_mesh(mesh, file_name, path+'/mesh/'+str(im))
+            im += 1
+
+    @property
+    def data(self):
+        return self._data
+
+    def __eq__(self, other):
+        eq_r = True
+        for k in self.__dict__:
+            #print(k, self.__dict__[k] == other.__dict__[k])
+            if self.__dict__[k].__class__.__name__ == 'ndarray':
+                eq_r = eq_r and (self.__dict__[k] == other.__dict__[k]).all()
+            else:
+                eq_r = eq_r and self.__dict__[k] == other.__dict__[k]
+        return eq_r
+
 %}
 
-%include <alps/gf/gf.hpp>
 %include <alps/gf/mesh.hpp>
 %include <alps/gf/piecewise_polynomial.hpp>
 %include "gf_aux.hpp"
 
-namespace alps {
-namespace gf {
+%define MESH_LOAD_SAVE_WITH_INSTANTIATION(py_name, cxx_name)
+%template(py_name) cxx_name ;
+%template(load_ ## py_name) load_from_hdf5<cxx_name >;
+%template(save_ ## py_name) save_to_hdf5<cxx_name >;
+%enddef
 
-%extend three_index_gf {
-    void _get_copy_buffer(VTYPE ** ARGOUTVIEWM_ARRAY3, int *DIM1, int *DIM2, int *DIM3) {
-        const VTYPE* origin = $self->data().origin();
-        int N = $self->data().num_elements();
+%define MESH_LOAD_SAVE(py_name, cxx_name)
+%template(load_ ## py_name) load_from_hdf5<cxx_name >;
+%template(save_ ## py_name) save_to_hdf5<cxx_name >;
+%enddef
 
-        //make a copy
-        VTYPE* p_copy_data = new VTYPE[N];
-        std::copy(origin, origin+N, p_copy_data);
+MESH_LOAD_SAVE_WITH_INSTANTIATION(matsubara_positive_mesh, alps::gf::matsubara_mesh<alps::gf::mesh::POSITIVE_ONLY>)
+MESH_LOAD_SAVE_WITH_INSTANTIATION(real_numerical_mesh, alps::gf::numerical_mesh<double>)
 
-        *ARGOUTVIEWM_ARRAY3 = p_copy_data;
-        *DIM1 = $self->data().shape()[0];
-        *DIM2 = $self->data().shape()[1];
-        *DIM3 = $self->data().shape()[2];
-    }
+MESH_LOAD_SAVE(index_mesh, alps::gf::index_mesh)
+MESH_LOAD_SAVE(legendre_mesh, alps::gf::legendre_mesh)
 
-    VTYPE _get_value(int i1, int i2, int i3) {
-        return $self->operator()(MESH1::index_type(i1), MESH2::index_type(i2), MESH3::index_type(i3));
-    }
-}
-
-%extend seven_index_gf {
-    void _get_copy_buffer(VTYPE ** ARGOUTVIEWM_ARRAY1, int *DIM1) {
-        const VTYPE* origin = $self->data().origin();
-        int N = $self->data().num_elements();
-
-        //make a copy
-        VTYPE* p_copy_data = new VTYPE[N];
-        std::copy(origin, origin+N, p_copy_data);
-
-        *ARGOUTVIEWM_ARRAY1 = p_copy_data;
-        *DIM1 = N;
-    }
-
-    VTYPE _get_value(int i1, int i2, int i3, int i4, int i5, int i6, int i7) {
-        return $self->operator()(
-            MESH1::index_type(i1),
-            MESH2::index_type(i2),
-            MESH3::index_type(i3),
-            MESH4::index_type(i4),
-            MESH5::index_type(i5),
-            MESH6::index_type(i6),
-            MESH7::index_type(i7)
-        );
-    }
-}
-
-
-}
-}
-
-namespace alps {
-namespace gf {
-
-%extend three_index_gf {
-    %pythoncode %{ 
-        def to_array(self):
-            return self._get_copy_buffer()
-
-        def __call__(self, i1, i2, i3):
-            return self._get_value(i1, i2, i3)
-    %}
-}
-
-%extend seven_index_gf {
-    %pythoncode %{ 
-        def to_array(self):
-            return self._get_copy_buffer().reshape(self.mesh1().extent(), self.mesh2().extent(), self.mesh3().extent(), self.mesh4().extent(), self.mesh5().extent(), self.mesh6().extent(), self.mesh7().extent())
-
-        def __call__(self, i1, i2, i3, i4, i5, i6, i7):
-            return self._get_value(i1, i2, i3, i4, i5, i6, i7)
-    %}
-}
-
-}
-}
-
-/*
-%typemap(in) alps::gf::numerical_mesh<double>::index_type
-{
-  $1 = alps::gf::numerical_mesh<double>::index_type(static_cast<int>(PyInt_AsLong($input)));
-}
-*/
-
-
-%template(ALPSGF3ComplexMatsubaraPIndexIndex) alps::gf::three_index_gf<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh>;
-%template(load_ALPSGF3ComplexMatsubaraPIndexIndex) load_gf_cxx<alps::gf::three_index_gf<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh> >;
-%template(save_ALPSGF3ComplexMatsubaraPIndexIndex) save_gf_cxx<alps::gf::three_index_gf<std::complex<double>, alps::gf::matsubara_mesh<mesh::POSITIVE_ONLY>, alps::gf::index_mesh, alps::gf::index_mesh> >;
-
-%template(ALPSGF3ComplexNumericalIndexIndex) alps::gf::three_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh>;
-%template(load_ALPSGF3ComplexNumericalIndexIndex) load_gf_cxx<alps::gf::three_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh> >;
-%template(save_ALPSGF3ComplexNumericalIndexIndex) save_gf_cxx<alps::gf::three_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh> >;
-
-%template(ALPSGF7ComplexNumericalNumericalNumericalIndexIndexIndexIndex) alps::gf::seven_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh>;
-%template(load_ALPSGF7ComplexNumericalNumericalNumericalIndexIndexIndexIndex) load_gf_cxx<alps::gf::seven_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh> >;
-%template(save_ALPSGF7ComplexNumericalNumericalNumericalIndexIndexIndexIndex) save_gf_cxx<alps::gf::seven_index_gf<std::complex<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::numerical_mesh<double>, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh, alps::gf::index_mesh> >;
-
-%template(real_numerical_mesh) alps::gf::numerical_mesh<double>;
 %template(real_piecewise_polynomial) alps::gf::piecewise_polynomial<double>;
-%template(matsubara_positive_mesh) alps::gf::matsubara_mesh<alps::gf::mesh::POSITIVE_ONLY>;

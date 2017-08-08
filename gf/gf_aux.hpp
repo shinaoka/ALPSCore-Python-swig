@@ -3,13 +3,13 @@
 #include <alps/gf/mesh.hpp>
 
 template<typename G>
-void load_gf_cxx(G& gf, const std::string& file_name, const std::string& path) {
+void load_from_hdf5(G& gf, const std::string& file_name, const std::string& path) {
     alps::hdf5::archive iar(file_name, "r");
     gf.load(iar, path); 
 }
 
 template<typename G>
-void save_gf_cxx(G& gf, const std::string& file_name, const std::string& path) {
+void save_to_hdf5(G& gf, const std::string& file_name, const std::string& path) {
     alps::hdf5::archive oar(file_name, "w");
     gf.save(oar, path); 
 }
