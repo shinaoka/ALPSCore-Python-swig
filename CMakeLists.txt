@@ -46,6 +46,12 @@ include_directories(
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()" OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
 
+# Set install directory
+string(REGEX MATCH "^[0-9]+\\.[0-9]+" PYTHON_VERSION
+       "${PYTHONLIBS_VERSION_STRING}")
+set(PYTHON_INSTALL_DIR "lib/python${PYTHON_VERSION}/site-packages"
+        CACHE PATH "Path for installing the python packages")
+
 add_subdirectory(gf)
 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py DESTINATION ${PYTHON_SITE_PACKAGES}/alps)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py DESTINATION ${PYTHON_INSTALL_DIR}/alps)

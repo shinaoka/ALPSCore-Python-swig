@@ -1,5 +1,5 @@
 /* gf.i */
-%module(package="alps") gf
+%module(package="alps", docstring="Python bindings for ALPSCore gf libraries") gf
 %{
 #define SWIG_FILE_WITH_INIT
 #include <alps/gf/mesh.hpp>
@@ -49,6 +49,9 @@ def save_gf_data(f, path, data):
         raise RuntimeError("Unknown type : "+dtype)
 
 def load_mesh(file_name, path):
+    """
+    Load a mesh object from a HDF file
+    """
     with h5py.File(file_name, 'r') as f:
         kind = f[path+'/kind'].value
         if kind == 'MATSUBARA':
@@ -76,10 +79,16 @@ def load_mesh(file_name, path):
     return mesh_obj
 
 def save_mesh(mesh, file_name, path):
+    """
+    Save a mesh object into a HDF file
+    """
     saver = globals()['save_'+ mesh.__class__.__name__]
     saver(mesh, file_name, path)
 
 class gf(object):
+    """
+    Class representing Green's function
+    """
     def __init__(self):
         self._meshes = []
 
@@ -91,6 +100,9 @@ class gf(object):
         return self._meshes[idx]
 
     def load(self, file_name, path):
+        """
+        Load a Green's function object from a HDF file
+        """
         with h5py.File(file_name, 'r') as f:
             self._data = load_gf_data(f, path+'/data')
             n_mesh = f[path+'/mesh/N'].value
@@ -105,6 +117,9 @@ class gf(object):
             self._meshes.append(load_mesh(file_name, path+'/mesh/'+str(im+1)))
 
     def save(self, file_name, path):
+        """
+        Save a Green's function object into a HDF file
+        """
         with h5py.File(file_name, 'w') as f:
             save_gf_data(f, path+'/data', self._data)
             f[path+'/version/major'] = self._version_major
@@ -118,6 +133,10 @@ class gf(object):
         for mesh in self._meshes:
             save_mesh(mesh, file_name, path+'/mesh/'+str(im))
             im += 1
+
+    @property
+    def meshes(self):
+        return self._meshes
 
     @property
     def data(self):
@@ -134,6 +153,10 @@ class gf(object):
         return eq_r
 
 %}
+
+%feature("autodoc", "This is index_mesh .") alps::gf::index_mesh;
+%feature("autodoc", "Do not call") alps::gf::index_mesh::compute_points;
+
 
 %include <alps/gf/mesh.hpp>
 %include <alps/gf/piecewise_polynomial.hpp>

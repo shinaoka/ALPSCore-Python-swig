@@ -21,6 +21,8 @@ g2.load('tmp.h5', 'gf')
 #print g.mesh(0)
 #print g2.mesh(0)
 assert g == g2
+#print(help(alps.gf.gf))
+#print(help(alps.gf))
 
 #Load a gf from data.h5
 #g1 = alps.gf.load_gf('data.h5', 'gf')
