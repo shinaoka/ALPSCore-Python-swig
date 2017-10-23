@@ -31,7 +31,7 @@ find_package(SWIG REQUIRED 3.0)
 include(${SWIG_USE_FILE})
 include(GenerateExportHeader)
 
-find_package(ALPSCore REQUIRED gf gf-extensions)
+find_package(ALPSCore REQUIRED gf)
 
 #Get include dirs from alps-gf (FIXME: take care of all ALPSCore modules)
 get_target_property(ALPSCore_INCLUDE_DIR alps::alps-gf INTERFACE_INCLUDE_DIRECTORIES)

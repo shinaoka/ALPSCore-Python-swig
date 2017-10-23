@@ -70,6 +70,8 @@ def load_mesh(file_name, path):
             py_name = 'index_mesh'
         elif kind == 'NUMERICAL_MESH':
             py_name = 'numerical_mesh'
+        elif kind == 'IMAGINARY_TIME_POWER':
+            py_name = 'power_mesh'
         else:
             raise RuntimeError("Unsupported mesh type in python wrapper: "+kind)
 
@@ -157,10 +159,35 @@ class gf(object):
 %feature("autodoc", "This is index_mesh .") alps::gf::index_mesh;
 %feature("autodoc", "Do not call") alps::gf::index_mesh::compute_points;
 
+/* Some hacks in power_mesh */
+%ignore alps::gf::power_mesh::points;
+%ignore alps::gf::power_mesh::weights;
+%extend alps::gf::power_mesh {
+    void points_impl(double** ARGOUTVIEW_ARRAY1, int* DIM1) {
+        *ARGOUTVIEW_ARRAY1 = const_cast<double*>(&self->points()[0]);
+        *DIM1 = static_cast<int>(self->points().size());
+    }
+
+    void weights_impl(double** ARGOUTVIEW_ARRAY1, int* DIM1) {
+        *ARGOUTVIEW_ARRAY1 = const_cast<double*>(&self->weights()[0]);
+        *DIM1 = static_cast<int>(self->weights().size());
+    }
+
+    %pythoncode %{
+        def points(self):
+            return self.points_impl()
+    %}
+
+    %pythoncode %{
+        def weights(self):
+            return self.weights_impl()
+    %}
+} 
 
 %include <alps/gf/mesh.hpp>
 %include <alps/gf/piecewise_polynomial.hpp>
 %include "gf_aux.hpp"
+
 
 %define MESH_LOAD_SAVE_WITH_INSTANTIATION(py_name, cxx_name)
 %template(py_name) cxx_name ;
@@ -178,5 +205,6 @@ MESH_LOAD_SAVE_WITH_INSTANTIATION(real_numerical_mesh, alps::gf::numerical_mesh<
 
 MESH_LOAD_SAVE(index_mesh, alps::gf::index_mesh)
 MESH_LOAD_SAVE(legendre_mesh, alps::gf::legendre_mesh)
+MESH_LOAD_SAVE(power_mesh, alps::gf::power_mesh)
 
 %template(real_piecewise_polynomial) alps::gf::piecewise_polynomial<double>;
