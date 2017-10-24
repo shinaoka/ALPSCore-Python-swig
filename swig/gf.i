@@ -19,6 +19,7 @@
 %pythoncode %{ 
 import h5py
 import numpy
+import copy
 
 def load_gf_data(f, path, dtype=float):
     dtype = float
@@ -91,11 +92,17 @@ class gf(object):
     """
     Class representing Green's function
     """
-    def __init__(self):
-        self._meshes = []
+    def __init__(self, meshes = []):
+
+        self._version_major = 0
+        self._version_minor = 2
+        self._version_originator = "ALPSCore/Python"
+        self._version_reference = "https://github.com/ALPSCore/H5GF/blob/master/H5GF.rst"
 
         # Data (numpy array)
-        self._data = None
+        self._meshes= [copy.deepcopy(m) for m in meshes]
+        extents = [m.extents() for m in meshes]
+        self._data = numpy.zeros(extents, dtype=complex)
 
     def mesh(self, idx):
         assert idx >= 0 and idx < len(self._meshes)
@@ -143,6 +150,9 @@ class gf(object):
     @property
     def data(self):
         return self._data
+
+    def extents(self):
+        return self._data.shape
 
     def __eq__(self, other):
         eq_r = True

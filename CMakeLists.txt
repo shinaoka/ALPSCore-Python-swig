@@ -52,6 +52,18 @@ string(REGEX MATCH "^[0-9]+\\.[0-9]+" PYTHON_VERSION
 set(PYTHON_INSTALL_DIR "lib/python${PYTHON_VERSION}/site-packages"
         CACHE PATH "Path for installing the python packages")
 
-add_subdirectory(gf)
+add_subdirectory(swig)
 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py DESTINATION ${PYTHON_INSTALL_DIR}/alps)
+# Enable tests
+#include(EnableTests)
+# Build and enable tests
+# testing setup
+# enable_testing() must be called in the top-level CMakeLists.txt before any add_subdirectory() is called.
+option(Testing "Enable testing" ON)
+if (Testing)
+    include(EnableTests) #defined in ./cmake
+    enable_testing(test)
+    add_subdirectory(test)
+endif()
+
+
