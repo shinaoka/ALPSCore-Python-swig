@@ -23,8 +23,18 @@ class TestMethods(unittest.TestCase):
         beta = 10.0
         niw = 1000
         ntau = 1000
-        mp_mesh = gf.matsubara_positive_mesh(beta, niw)
-        it_mesh = gf.itime_mesh(beta, ntau)
+        E = 1.0
+
+        mesh_in = gf.itime_mesh(beta, ntau)
+        mesh_out = gf.matsubara_positive_mesh(beta, niw)
+        t = gf_transform.gf_transform(mesh_in, mesh_out)
+
+        g_in = gf.gf([mesh_in])
+        tau = numpy.linspace(0, beta, ntau)
+        for i in range(ntau):
+            g_in.data[i] = numpy.exp(-tau[i]*E)/(1+numpy.exp(-beta*E))
+
+        g_out = t(g_in)
 
     def test_gf_io(self):
         mp_mesh = gf.matsubara_positive_mesh(10.0, 1000)

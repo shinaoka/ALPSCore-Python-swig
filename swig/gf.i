@@ -100,8 +100,8 @@ class gf(object):
         self._version_reference = "https://github.com/ALPSCore/H5GF/blob/master/H5GF.rst"
 
         # Data (numpy array)
-        self._meshes= [copy.deepcopy(m) for m in meshes]
-        extents = [m.extents() for m in meshes]
+        self._meshes= [copy.copy(m) for m in meshes]
+        extents = [m.extent() for m in meshes]
         self._data = numpy.zeros(extents, dtype=complex)
 
     def mesh(self, idx):
