@@ -26,7 +26,12 @@ class gf_transform:
     def __transform_real_data(self, in_size, data_in, out_size):
         n_data_set = int(data_in.size/in_size)
         view_in = data_in.reshape((in_size, n_data_set))
+        buffer_in = numpy.zeros((in_size,), dtype=float)
+        buffer_out = numpy.zeros((out_size,), dtype=complex)
         data_out = numpy.zeros((out_size, n_data_set), dtype=complex)
         for i in range(n_data_set):
-            self.__transform(view_in[:,i], data_out[:,i])
+            buffer_in[:] = view_in[:,i]
+            buffer_out[:] = 0.0 # __transform() does not erase existing values in buffer_out.
+            self.__transform(buffer_in, buffer_out)
+            data_out[:,i] = buffer_out
         return data_out

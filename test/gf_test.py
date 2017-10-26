@@ -25,22 +25,27 @@ class TestMethods(unittest.TestCase):
         niw = 100
         ntau = 100000
         E = 10.0
-        atol = 1e-5
+        atol = 1e-4
+        nindex = 2
 
         mesh_in = alps.gf.itime_mesh(beta, ntau)
         mesh_out = alps.gf.matsubara_positive_mesh(beta, niw)
         t = alps.gf_transform.gf_transform(mesh_in, mesh_out)
 
-        g_in = alps.gf.gf([mesh_in])
+        mesh2 = alps.gf.index_mesh(nindex)
+
+        g_in = alps.gf.gf([mesh_in, mesh2])
         tau = numpy.linspace(0, beta, ntau)
         for i in range(ntau):
-            g_in.data[i] = -numpy.exp(-tau[i]*E)/(1+numpy.exp(-beta*E))
+            for j in range(nindex):
+                g_in.data[i,j] = (j+1) * ( -numpy.exp(-tau[i]*E)/(1+numpy.exp(-beta*E)))
 
         g_out = t(g_in)
 
-        for n in range(niw):
-            ref = 1.0/(1J*(2*n+1)*numpy.pi/beta - E)
-            self.assertTrue(numpy.abs(ref-g_out.data[n]) < atol)
+        g_out_ref = numpy.array([1.0/(1J*(2*n+1)*numpy.pi/beta - E) for n in range(niw)])
+
+        for j in range(nindex):
+            self.assertTrue(numpy.amax(numpy.abs((j+1)*g_out_ref-g_out.data[:,j])) < atol)
 
     def test_gf_io(self):
         mp_mesh = alps.gf.matsubara_positive_mesh(10.0, 1000)
