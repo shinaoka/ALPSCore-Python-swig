@@ -16,7 +16,6 @@ file(GLOB PURE_PYTHON_MODULES ${CMAKE_SOURCE_DIR}/swig/*.py)
 add_custom_target(copy_pure_python_modules
     COMMAND ${CMAKE_COMMAND} -E copy ${PURE_PYTHON_MODULES} ${CMAKE_BINARY_DIR}/swig/alps
     DEPENDS ${PURE_PYTHON_MODULES})
-message("DEBUG "  ${PURE_PYTHON_MODULES})
 add_test(ctest_copy_pure_python_modules ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target copy_pure_python_modules)
 
 # Copy all files used in tests into test/
