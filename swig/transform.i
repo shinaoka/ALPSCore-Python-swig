@@ -8,7 +8,7 @@
 #define SWIG_FILE_WITH_INIT
 %}
 
-%include "../common/swig/numpy.i"
+%include "numpy.i"
 
 %init
 %{

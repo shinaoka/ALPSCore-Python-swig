@@ -5,7 +5,8 @@ else:
     import unittest
 
 import numpy 
-import gf, gf_transform
+import alps.gf
+import alps.gf_transform
 
 class TestMethods(unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -13,36 +14,41 @@ class TestMethods(unittest.TestCase):
 
     def test_mesh(self):
         beta = 10.0
-        mp_mesh = gf.matsubara_positive_mesh(beta, 1000)
-        it_mesh = gf.itime_mesh(beta, 1000)
+        mp_mesh = alps.gf.matsubara_positive_mesh(beta, 1000)
+        it_mesh = alps.gf.itime_mesh(beta, 1000)
 
         self.assertIsNotNone(mp_mesh)
         self.assertIsNotNone(it_mesh)
 
     def test_gf_transform_tau_to_iw(self):
-        beta = 10.0
-        niw = 1000
-        ntau = 1000
-        E = 1.0
+        beta = 1.0
+        niw = 100
+        ntau = 100000
+        E = 10.0
+        atol = 1e-5
 
-        mesh_in = gf.itime_mesh(beta, ntau)
-        mesh_out = gf.matsubara_positive_mesh(beta, niw)
-        t = gf_transform.gf_transform(mesh_in, mesh_out)
+        mesh_in = alps.gf.itime_mesh(beta, ntau)
+        mesh_out = alps.gf.matsubara_positive_mesh(beta, niw)
+        t = alps.gf_transform.gf_transform(mesh_in, mesh_out)
 
-        g_in = gf.gf([mesh_in])
+        g_in = alps.gf.gf([mesh_in])
         tau = numpy.linspace(0, beta, ntau)
         for i in range(ntau):
-            g_in.data[i] = numpy.exp(-tau[i]*E)/(1+numpy.exp(-beta*E))
+            g_in.data[i] = -numpy.exp(-tau[i]*E)/(1+numpy.exp(-beta*E))
 
         g_out = t(g_in)
 
+        for n in range(niw):
+            ref = 1.0/(1J*(2*n+1)*numpy.pi/beta - E)
+            self.assertTrue(numpy.abs(ref-g_out.data[n]) < atol)
+
     def test_gf_io(self):
-        mp_mesh = gf.matsubara_positive_mesh(10.0, 1000)
-        idx_mesh = gf.index_mesh(6)
-        g = gf.gf()
+        mp_mesh = alps.gf.matsubara_positive_mesh(10.0, 1000)
+        idx_mesh = alps.gf.index_mesh(6)
+        g = alps.gf.gf()
         g.load('data.h5', 'gf')
         g.save('tmp.h5', 'gf')
-        g2 = gf.gf()
+        g2 = alps.gf.gf()
         g2.load('tmp.h5', 'gf')
         assert g == g2
 

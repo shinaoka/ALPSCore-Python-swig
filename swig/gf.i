@@ -7,7 +7,7 @@
 %}
 
 %include "std_string.i"
-%include "../common/swig/numpy.i"
+%include "numpy.i"
 
 %init %{
    import_array();
@@ -150,6 +150,9 @@ class gf(object):
     @property
     def data(self):
         return self._data
+
+    def dim(self):
+        return len(self._meshes)
 
     def extents(self):
         return self._data.shape
